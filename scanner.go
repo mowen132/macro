@@ -318,6 +318,7 @@ func (s *Scanner) scanZero(pos Position) (*Token, error) {
 		return s.scanExponent(pos)
 
 	case ')', ']', '}', ' ', '\t', ';', '\n', '\r', eof:
+		s.buf.Reset()
 		return &Token{IntToken, 0, pos}, nil
 
 	default:
