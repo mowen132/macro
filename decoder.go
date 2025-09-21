@@ -11,11 +11,11 @@ import (
 type scopeType int
 
 const (
-	docScope scopeType = iota
-	listScope
-	listLiteralScope
-	dictLiteralScope
-	quoteScope
+	scopeDoc scopeType = iota
+	scopeList
+	scopeListLiteral
+	scopeDictLiteral
+	scopeQuote
 )
 
 type Decoder struct {
@@ -29,7 +29,7 @@ func NewDecoder(r io.Reader) *Decoder {
 }
 
 func (d *Decoder) Decode() (any, error) {
-	return d.decode(docScope)
+	return d.decode(scopeDoc)
 }
 
 func (d *Decoder) decode(scope scopeType) (any, error) {
@@ -41,44 +41,44 @@ func (d *Decoder) decode(scope scopeType) (any, error) {
 		}
 
 		switch tok.Kind {
-		case IntToken:
+		case TokenInt:
 			return tok.AsInt(), nil
 
-		case FloatToken:
+		case TokenFloat:
 			return tok.AsFloat(), nil
 
-		case StringToken:
+		case TokenString:
 			return tok.AsString(), nil
 
-		case SymbolToken:
+		case TokenSymbol:
 			return Symbol(tok.AsString()), nil
 
-		case LeftParenthesisToken:
-			return d.decodeList(listScope, []any{})
+		case TokenLeftParenthesis:
+			return d.decodeList(scopeList, []any{})
 
-		case RightParenthesisToken:
-			return nil, d.checkEndDelimiter(scope == listScope, tok.Pos, ")")
+		case TokenRightParenthesis:
+			return nil, d.checkEndDelimiter(scope == scopeList, tok.Pos, ")")
 
-		case LeftSquareToken:
-			return d.decodeList(listLiteralScope, []any{Symbol("list")})
+		case TokenLeftSquare:
+			return d.decodeList(scopeListLiteral, []any{Symbol("list")})
 
-		case RightSquareToken:
-			return nil, d.checkEndDelimiter(scope == listLiteralScope, tok.Pos, "]")
+		case TokenRightSquare:
+			return nil, d.checkEndDelimiter(scope == scopeListLiteral, tok.Pos, "]")
 
-		case LeftCurlyToken:
-			return d.decodeList(dictLiteralScope, []any{Symbol("dict")})
+		case TokenLeftCurly:
+			return d.decodeList(scopeDictLiteral, []any{Symbol("dict")})
 
-		case RightCurlyToken:
-			return nil, d.checkEndDelimiter(scope == dictLiteralScope, tok.Pos, "}")
+		case TokenRightCurly:
+			return nil, d.checkEndDelimiter(scope == scopeDictLiteral, tok.Pos, "}")
 
-		case QuoteToken:
+		case TokenQuote:
 			return d.decodeQuoted("quote")
 
-		case UnquoteToken:
+		case TokenUnquote:
 			return d.decodeQuoted("unquote")
 
-		case EndToken:
-			return nil, d.checkEndDelimiter(scope == docScope, tok.Pos, "eof")
+		case TokenEnd:
+			return nil, d.checkEndDelimiter(scope == scopeDoc, tok.Pos, "eof")
 		}
 	}
 }
@@ -108,7 +108,7 @@ func (d *Decoder) checkEndDelimiter(expected bool, pos Position, delim string) e
 }
 
 func (d *Decoder) decodeQuoted(name string) (any, error) {
-	val, err := d.decode(quoteScope)
+	val, err := d.decode(scopeQuote)
 
 	if err != nil {
 		return nil, err

@@ -25,49 +25,49 @@ func NewPrinter(w io.Writer) *Printer {
 
 func (p *Printer) PrintToken(tok *Token) error {
 	switch tok.Kind {
-	case IntToken:
+	case TokenInt:
 		return p.PrintInt(tok.AsInt())
 
-	case FloatToken:
+	case TokenFloat:
 		return p.PrintFloat(tok.AsFloat())
 
-	case StringToken:
+	case TokenString:
 		return p.PrintString(tok.AsString())
 
-	case SymbolToken:
+	case TokenSymbol:
 		return p.PrintSymbol(tok.AsString())
 
-	case LeftParenthesisToken:
+	case TokenLeftParenthesis:
 		return p.PrintLeftParenthesis()
 
-	case RightParenthesisToken:
+	case TokenRightParenthesis:
 		return p.PrintRightParenthesis()
 
-	case LeftSquareToken:
+	case TokenLeftSquare:
 		return p.PrintLeftSquare()
 
-	case RightSquareToken:
+	case TokenRightSquare:
 		return p.PrintRightSquare()
 
-	case LeftCurlyToken:
+	case TokenLeftCurly:
 		return p.PrintLeftCurly()
 
-	case RightCurlyToken:
+	case TokenRightCurly:
 		return p.PrintRightCurly()
 
-	case QuoteToken:
+	case TokenQuote:
 		return p.PrintQuote()
 
-	case UnquoteToken:
+	case TokenUnquote:
 		return p.PrintUnquote()
 
-	case WhitespaceToken:
+	case TokenWhitespace:
 		return p.PrintWhitespace(tok.AsString())
 
-	case CommentToken:
+	case TokenComment:
 		return p.PrintComment(tok.AsString())
 
-	case NewlineToken:
+	case TokenNewline:
 		return p.PrintNewline()
 	}
 

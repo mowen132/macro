@@ -70,7 +70,7 @@ func (s *Scanner) Scan() (*Token, error) {
 			return s.scanDot(pos)
 
 		case ')', ']', '}', ' ', '\t', ';', '\n', '\r', eof:
-			return &Token{SymbolToken, s.extract(), pos}, nil
+			return &Token{TokenSymbol, s.extract(), pos}, nil
 
 		default:
 			if unicode.IsLetter(s.char) {
@@ -102,7 +102,7 @@ func (s *Scanner) Scan() (*Token, error) {
 
 				switch s.char {
 				case ')', ']', '}', ' ', '\t', ';', '\n', '\r', eof:
-					return &Token{StringToken, s.extract(), pos}, nil
+					return &Token{TokenString, s.extract(), pos}, nil
 
 				default:
 					return nil, s.errorUnexpectedf("%q after closing '\"'", s.char)
@@ -176,7 +176,7 @@ func (s *Scanner) Scan() (*Token, error) {
 					s.buf.WriteRune('`')
 
 				case ')', ']', '}', ' ', '\t', ';', '\n', '\r', eof:
-					return &Token{StringToken, s.extract(), pos}, nil
+					return &Token{TokenString, s.extract(), pos}, nil
 
 				default:
 					return nil, s.errorUnexpectedf("%q after closing '`'", s.char)
@@ -211,28 +211,28 @@ func (s *Scanner) Scan() (*Token, error) {
 		return s.scanDot(s.pos)
 
 	case '(':
-		return s.scanSingle(LeftParenthesisToken)
+		return s.scanSingle(TokenLeftParenthesis)
 
 	case ')':
-		return s.scanSingleTerm(RightParenthesisToken)
+		return s.scanSingleTerm(TokenRightParenthesis)
 
 	case '[':
-		return s.scanSingle(LeftSquareToken)
+		return s.scanSingle(TokenLeftSquare)
 
 	case ']':
-		return s.scanSingleTerm(RightSquareToken)
+		return s.scanSingleTerm(TokenRightSquare)
 
 	case '{':
-		return s.scanSingle(LeftCurlyToken)
+		return s.scanSingle(TokenLeftCurly)
 
 	case '}':
-		return s.scanSingleTerm(RightCurlyToken)
+		return s.scanSingleTerm(TokenRightCurly)
 
 	case '\'':
-		return s.scanSingle(QuoteToken)
+		return s.scanSingle(TokenQuote)
 
 	case ',':
-		return s.scanSingle(UnquoteToken)
+		return s.scanSingle(TokenUnquote)
 
 	case '\t', ' ':
 		pos := s.pos
@@ -247,7 +247,7 @@ func (s *Scanner) Scan() (*Token, error) {
 				continue
 
 			default:
-				return &Token{WhitespaceToken, s.extract(), pos}, nil
+				return &Token{TokenWhitespace, s.extract(), pos}, nil
 			}
 		}
 
@@ -261,7 +261,7 @@ func (s *Scanner) Scan() (*Token, error) {
 
 			switch s.char {
 			case '\n', '\r', eof:
-				return &Token{CommentToken, s.extract(), pos}, nil
+				return &Token{TokenComment, s.extract(), pos}, nil
 
 			case '\x00', '\x01', '\x02', '\x03', '\x04', '\x05', '\x06', '\a', '\b', '\v',
 				'\f', '\x0e', '\x0f', '\x10', '\x11', '\x12', '\x13', '\x14', '\x15', '\x16',
@@ -275,7 +275,7 @@ func (s *Scanner) Scan() (*Token, error) {
 		}
 
 	case '\n':
-		return s.scanSingle(NewlineToken)
+		return s.scanSingle(TokenNewline)
 
 	case '\r':
 		if err := s.read(); err != nil {
@@ -284,7 +284,7 @@ func (s *Scanner) Scan() (*Token, error) {
 
 		switch s.char {
 		case '\n':
-			return s.scanSingle(NewlineToken)
+			return s.scanSingle(TokenNewline)
 
 		case eof:
 			return nil, s.errorUnexpectedf("eof after '\r'")
@@ -294,7 +294,7 @@ func (s *Scanner) Scan() (*Token, error) {
 		}
 
 	case eof:
-		return &Token{EndToken, nil, s.pos}, nil
+		return &Token{TokenEnd, nil, s.pos}, nil
 
 	default:
 		if unicode.IsLetter(s.char) {
@@ -319,7 +319,7 @@ func (s *Scanner) scanZero(pos Position) (*Token, error) {
 
 	case ')', ']', '}', ' ', '\t', ';', '\n', '\r', eof:
 		s.buf.Reset()
-		return &Token{IntToken, 0, pos}, nil
+		return &Token{TokenInt, 0, pos}, nil
 
 	default:
 		return nil, s.errorUnexpectedf("%q after '0'", s.char)
@@ -344,7 +344,7 @@ func (s *Scanner) scanDigit(pos Position) (*Token, error) {
 
 		case ')', ']', '}', ' ', '\t', ';', '\n', '\r', eof:
 			val, _ := strconv.Atoi(s.extract())
-			return &Token{IntToken, val, pos}, nil
+			return &Token{TokenInt, val, pos}, nil
 
 		default:
 			return nil, s.errorUnexpectedf("%q after digit", s.char)
@@ -373,7 +373,7 @@ func (s *Scanner) scanDecimal(pos Position) (*Token, error) {
 
 			case ')', ']', '}', ' ', '\t', ';', '\n', '\r', eof:
 				val, _ := strconv.ParseFloat(s.extract(), 64)
-				return &Token{FloatToken, val, pos}, nil
+				return &Token{TokenFloat, val, pos}, nil
 
 			default:
 				return nil, s.errorUnexpectedf("%q in decimal", s.char)
@@ -433,7 +433,7 @@ func (s *Scanner) scanExponent(pos Position) (*Token, error) {
 
 		case ')', ']', '}', ' ', '\t', ';', '\n', '\r', eof:
 			val, _ := strconv.ParseFloat(s.extract(), 64)
-			return &Token{FloatToken, val, pos}, nil
+			return &Token{TokenFloat, val, pos}, nil
 
 		default:
 			return nil, s.errorUnexpectedf("%q in exponent", s.char)
@@ -461,7 +461,7 @@ func (s *Scanner) scanSymbol(pos Position) (*Token, error) {
 			continue
 
 		case ')', ']', '}', ' ', '\t', ';', '\n', '\r', eof:
-			return &Token{SymbolToken, s.extract(), pos}, nil
+			return &Token{TokenSymbol, s.extract(), pos}, nil
 
 		default:
 			if unicode.IsLetter(s.char) || unicode.IsDigit(s.char) {
@@ -491,7 +491,7 @@ func (s *Scanner) scanDot(pos Position) (*Token, error) {
 		return s.scanSymbol(pos)
 
 	case ')', ']', '}', ' ', '\t', ';', '\n', '\r', eof:
-		return &Token{SymbolToken, s.extract(), pos}, nil
+		return &Token{TokenSymbol, s.extract(), pos}, nil
 
 	case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9':
 		return nil, s.errorUnexpectedf("digit after '.'")

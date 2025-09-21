@@ -16,22 +16,22 @@ type Token struct {
 type TokenKind int
 
 const (
-	IntToken TokenKind = iota
-	FloatToken
-	StringToken
-	SymbolToken
-	LeftParenthesisToken
-	RightParenthesisToken
-	LeftSquareToken
-	RightSquareToken
-	LeftCurlyToken
-	RightCurlyToken
-	QuoteToken
-	UnquoteToken
-	WhitespaceToken
-	CommentToken
-	NewlineToken
-	EndToken
+	TokenInt TokenKind = iota
+	TokenFloat
+	TokenString
+	TokenSymbol
+	TokenLeftParenthesis
+	TokenRightParenthesis
+	TokenLeftSquare
+	TokenRightSquare
+	TokenLeftCurly
+	TokenRightCurly
+	TokenQuote
+	TokenUnquote
+	TokenWhitespace
+	TokenComment
+	TokenNewline
+	TokenEnd
 )
 
 func (t *Token) AsInt() int {
@@ -62,52 +62,52 @@ func (t *Token) String() string {
 	prefix := t.Pos.String()
 
 	switch t.Kind {
-	case IntToken:
+	case TokenInt:
 		return fmt.Sprintf("INT %s %v", prefix, t.Val)
 
-	case FloatToken:
+	case TokenFloat:
 		return fmt.Sprintf("FLT %s %v", prefix, t.Val)
 
-	case StringToken:
+	case TokenString:
 		return fmt.Sprintf("STR %s %q", prefix, t.Val)
 
-	case SymbolToken:
+	case TokenSymbol:
 		return fmt.Sprintf("SYM %s %q", prefix, t.Val)
 
-	case LeftParenthesisToken:
+	case TokenLeftParenthesis:
 		return "LPA " + prefix
 
-	case RightParenthesisToken:
+	case TokenRightParenthesis:
 		return "RPA " + prefix
 
-	case LeftSquareToken:
+	case TokenLeftSquare:
 		return "LSQ " + prefix
 
-	case RightSquareToken:
+	case TokenRightSquare:
 		return "RSQ " + prefix
 
-	case LeftCurlyToken:
+	case TokenLeftCurly:
 		return "LCU " + prefix
 
-	case RightCurlyToken:
+	case TokenRightCurly:
 		return "RCU " + prefix
 
-	case QuoteToken:
+	case TokenQuote:
 		return "QUO " + prefix
 
-	case UnquoteToken:
+	case TokenUnquote:
 		return "UNQ " + prefix
 
-	case WhitespaceToken:
+	case TokenWhitespace:
 		return fmt.Sprintf("WHI %s %q", prefix, t.Val)
 
-	case CommentToken:
+	case TokenComment:
 		return fmt.Sprintf("CMT %s %q", prefix, t.Val)
 
-	case NewlineToken:
+	case TokenNewline:
 		return "NEW " + prefix
 
-	case EndToken:
+	case TokenEnd:
 		return "END " + prefix
 
 	default:
