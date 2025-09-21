@@ -6,6 +6,7 @@ package macro
 import (
 	"fmt"
 	"io"
+	"strconv"
 )
 
 type scopeType int
@@ -42,16 +43,18 @@ func (d *Decoder) decode(scope scopeType) (any, error) {
 
 		switch tok.Kind {
 		case TokenInt:
-			return tok.AsInt(), nil
+			val, err := strconv.Atoi(tok.Val)
+			return val, err
 
 		case TokenFloat:
-			return tok.AsFloat(), nil
+			val, err := strconv.ParseFloat(tok.Val, 64)
+			return val, err
 
 		case TokenString:
-			return tok.AsString(), nil
+			return tok.Val, nil
 
 		case TokenSymbol:
-			return Symbol(tok.AsString()), nil
+			return Symbol(tok.Val), nil
 
 		case TokenLeftParenthesis:
 			return d.decodeList(scopeList, []any{})

@@ -7,7 +7,6 @@ import (
 	"bufio"
 	"fmt"
 	"io"
-	"strconv"
 	"strings"
 	"unicode"
 )
@@ -294,7 +293,7 @@ func (s *Scanner) Scan() (*Token, error) {
 		}
 
 	case eof:
-		return &Token{TokenEnd, nil, s.pos}, nil
+		return &Token{TokenEnd, "", s.pos}, nil
 
 	default:
 		if unicode.IsLetter(s.char) {
@@ -318,8 +317,7 @@ func (s *Scanner) scanZero(pos Position) (*Token, error) {
 		return s.scanExponent(pos)
 
 	case ')', ']', '}', ' ', '\t', ';', '\n', '\r', eof:
-		s.buf.Reset()
-		return &Token{TokenInt, 0, pos}, nil
+		return &Token{TokenInt, s.extract(), pos}, nil
 
 	default:
 		return nil, s.errorUnexpectedf("%q after '0'", s.char)
@@ -343,8 +341,7 @@ func (s *Scanner) scanDigit(pos Position) (*Token, error) {
 			return s.scanExponent(pos)
 
 		case ')', ']', '}', ' ', '\t', ';', '\n', '\r', eof:
-			val, _ := strconv.Atoi(s.extract())
-			return &Token{TokenInt, val, pos}, nil
+			return &Token{TokenInt, s.extract(), pos}, nil
 
 		default:
 			return nil, s.errorUnexpectedf("%q after digit", s.char)
@@ -372,8 +369,7 @@ func (s *Scanner) scanDecimal(pos Position) (*Token, error) {
 				return s.scanExponent(pos)
 
 			case ')', ']', '}', ' ', '\t', ';', '\n', '\r', eof:
-				val, _ := strconv.ParseFloat(s.extract(), 64)
-				return &Token{TokenFloat, val, pos}, nil
+				return &Token{TokenFloat, s.extract(), pos}, nil
 
 			default:
 				return nil, s.errorUnexpectedf("%q in decimal", s.char)
@@ -432,8 +428,7 @@ func (s *Scanner) scanExponent(pos Position) (*Token, error) {
 			}
 
 		case ')', ']', '}', ' ', '\t', ';', '\n', '\r', eof:
-			val, _ := strconv.ParseFloat(s.extract(), 64)
-			return &Token{TokenFloat, val, pos}, nil
+			return &Token{TokenFloat, s.extract(), pos}, nil
 
 		default:
 			return nil, s.errorUnexpectedf("%q in exponent", s.char)
@@ -512,7 +507,7 @@ func (s *Scanner) scanSingle(kind TokenKind) (*Token, error) {
 		return nil, err
 	}
 
-	return &Token{kind, nil, pos}, nil
+	return &Token{kind, "", pos}, nil
 }
 
 func (s *Scanner) scanSingleTerm(kind TokenKind) (*Token, error) {
@@ -525,7 +520,7 @@ func (s *Scanner) scanSingleTerm(kind TokenKind) (*Token, error) {
 
 	switch s.char {
 	case ')', ']', '}', ' ', '\t', ';', '\n', '\r', eof:
-		return &Token{kind, nil, pos}, nil
+		return &Token{kind, "", pos}, nil
 
 	default:
 		return nil, s.errorUnexpectedf("%q after %q", s.char, char)

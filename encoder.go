@@ -6,6 +6,7 @@ package macro
 import (
 	"fmt"
 	"io"
+	"strconv"
 )
 
 type Encoder struct {
@@ -23,10 +24,10 @@ func (e *Encoder) Encode(val any) error {
 
 	switch v := val.(type) {
 	case int:
-		err = e.printer.PrintInt(v)
+		err = e.printer.PrintInt(strconv.Itoa(v))
 
 	case float64:
-		err = e.printer.PrintFloat(v)
+		err = e.printer.PrintFloat(strconv.FormatFloat(v, 'g', -1, 64))
 
 	case string:
 		err = e.printer.PrintString(v)

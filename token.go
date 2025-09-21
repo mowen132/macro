@@ -9,7 +9,7 @@ import (
 
 type Token struct {
 	Kind TokenKind
-	Val  any
+	Val  string
 	Pos  Position
 }
 
@@ -33,30 +33,6 @@ const (
 	TokenNewline
 	TokenEnd
 )
-
-func (t *Token) AsInt() int {
-	if v, ok := t.Val.(int); ok {
-		return v
-	}
-
-	return 0
-}
-
-func (t *Token) AsFloat() float64 {
-	if v, ok := t.Val.(float64); ok {
-		return v
-	}
-
-	return 0.0
-}
-
-func (t *Token) AsString() string {
-	if v, ok := t.Val.(string); ok {
-		return v
-	}
-
-	return ""
-}
 
 func (t *Token) String() string {
 	prefix := t.Pos.String()
