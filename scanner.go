@@ -156,46 +156,6 @@ func (s *Scanner) Scan() (*Token, error) {
 			}
 		}
 
-	case '`':
-		pos := s.pos
-
-		for {
-			if err := s.read(); err != nil {
-				return nil, err
-			}
-
-			switch s.char {
-			case '`':
-				if err := s.read(); err != nil {
-					return nil, err
-				}
-
-				switch s.char {
-				case '`':
-					s.buf.WriteRune('`')
-
-				case ')', ']', '}', ' ', '\t', ';', '\n', '\r', eof:
-					return &Token{TokenString, s.extract(), pos}, nil
-
-				default:
-					return nil, s.errorUnexpectedf("%q after closing '`'", s.char)
-				}
-
-			case '\x00', '\x01', '\x02', '\x03', '\x04', '\x05', '\x06', '\a', '\b', '\v',
-				'\f', '\r', '\x0e', '\x0f', '\x10', '\x11', '\x12', '\x13', '\x14', '\x15',
-				'\x16', '\x17', '\x18', '\x19', '\x1a', '\x1b', '\x1c', '\x1d', '\x1e', '\x1f',
-				'\x7f':
-
-				return nil, s.errorUnexpectedf("%q in raw string", s.char)
-
-			case eof:
-				return nil, s.errorUnexpectedf("eof in raw string")
-
-			default:
-				s.buf.WriteRune(s.char)
-			}
-		}
-
 	case '!', '#', '$', '%', '&', '*', '/', ':', '<', '=',
 		'>', '?', '@', 'A', 'B', 'C', 'D', 'E', 'F', 'G',
 		'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q',
@@ -229,6 +189,9 @@ func (s *Scanner) Scan() (*Token, error) {
 
 	case '\'':
 		return s.scanSingle(TokenQuote)
+
+	case '`':
+		return s.scanSingle(TokenQuasiquote)
 
 	case ',':
 		return s.scanSingle(TokenUnquote)

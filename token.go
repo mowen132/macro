@@ -27,6 +27,7 @@ const (
 	TokenLeftCurly
 	TokenRightCurly
 	TokenQuote
+	TokenQuasiquote
 	TokenUnquote
 	TokenWhitespace
 	TokenComment
@@ -70,6 +71,9 @@ func (t *Token) String() string {
 
 	case TokenQuote:
 		return "QUO " + prefix
+
+	case TokenQuasiquote:
+		return "QQU " + prefix
 
 	case TokenUnquote:
 		return "UNQ " + prefix

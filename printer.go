@@ -57,6 +57,9 @@ func (p *Printer) PrintToken(tok *Token) error {
 	case TokenQuote:
 		return p.PrintQuote()
 
+	case TokenQuasiquote:
+		return p.PrintQuasiquote()
+
 	case TokenUnquote:
 		return p.PrintUnquote()
 
@@ -118,29 +121,6 @@ func (p *Printer) PrintString(val string) error {
 	return p.writeString(s.String())
 }
 
-func (p *Printer) PrintStringRaw(val string) error {
-	var s strings.Builder
-	s.Grow(len(val) + 2)
-	s.WriteByte('`')
-	p.pos.Col++
-
-	for _, c := range val {
-		s.WriteRune(c)
-
-		if c == '\n' {
-			p.pos.Line++
-			p.pos.Col = 1
-		} else {
-			p.pos.Col++
-		}
-	}
-
-	s.WriteByte('`')
-	p.pos.Col++
-	_, err := p.writer.WriteString(s.String())
-	return err
-}
-
 func (p *Printer) PrintSymbol(val string) error {
 	return p.writeString(val)
 }
@@ -171,6 +151,10 @@ func (p *Printer) PrintRightCurly() error {
 
 func (p *Printer) PrintQuote() error {
 	return p.writeByte('\'')
+}
+
+func (p *Printer) PrintQuasiquote() error {
+	return p.writeByte('`')
 }
 
 func (p *Printer) PrintUnquote() error {

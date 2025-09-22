@@ -77,6 +77,9 @@ func (d *Decoder) decode(scope scopeType) (any, error) {
 		case TokenQuote:
 			return d.decodeQuoted("quote")
 
+		case TokenQuasiquote:
+			return d.decodeQuoted("quasiquote")
+
 		case TokenUnquote:
 			return d.decodeQuoted("unquote")
 

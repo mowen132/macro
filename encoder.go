@@ -60,6 +60,9 @@ func (e *Encoder) encodeList(list []any) error {
 			case "quote":
 				return e.encodeQuoted(list[1:], p.PrintQuote, "quote")
 
+			case "quasiquote":
+				return e.encodeQuoted(list[1:], p.PrintQuasiquote, "quasiquote")
+
 			case "unquote":
 				return e.encodeQuoted(list[1:], p.PrintUnquote, "unquote")
 			}
