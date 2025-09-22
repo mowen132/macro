@@ -130,17 +130,9 @@ Represents a single token:
 ```go
 type Token struct {
     Kind TokenKind
-    Val  any
+    Val  string
     Pos  Position
 }
-```
-
-With convenience methods:
-
-```go
-t.AsInt()    // int
-t.AsFloat()  // float64
-t.AsString() // string
 ```
 
 #### Position
