@@ -76,7 +76,7 @@ func (s *Scanner) Scan() (*Token, error) {
 				return s.scanSymbol(pos)
 			}
 
-			return nil, s.errorUnexpectedf("%q in symbol", s.char)
+			return nil, s.errUnexpectedf("%q in symbol", s.char)
 		}
 
 	case '0':
@@ -104,7 +104,7 @@ func (s *Scanner) Scan() (*Token, error) {
 					return &Token{TokenString, s.extract(), pos}, nil
 
 				default:
-					return nil, s.errorUnexpectedf("%q after closing '\"'", s.char)
+					return nil, s.errUnexpectedf("%q after closing '\"'", s.char)
 				}
 
 			case '\\':
@@ -135,10 +135,10 @@ func (s *Scanner) Scan() (*Token, error) {
 					s.buf.WriteRune('\t')
 
 				case eof:
-					return nil, s.errorUnexpectedf("eof in escape sequence")
+					return nil, s.errUnexpectedf("eof in escape sequence")
 
 				default:
-					return nil, s.errorUnexpectedf("%q in escape sequence", s.char)
+					return nil, s.errUnexpectedf("%q in escape sequence", s.char)
 				}
 
 			case '\x00', '\x01', '\x02', '\x03', '\x04', '\x05', '\x06', '\a', '\b', '\n',
@@ -146,10 +146,10 @@ func (s *Scanner) Scan() (*Token, error) {
 				'\x15', '\x16', '\x17', '\x18', '\x19', '\x1a', '\x1b', '\x1c', '\x1d', '\x1e',
 				'\x1f', '\x7f':
 
-				return nil, s.errorUnexpectedf("%q in string", s.char)
+				return nil, s.errUnexpectedf("%q in string", s.char)
 
 			case eof:
-				return nil, s.errorUnexpectedf("eof in string")
+				return nil, s.errUnexpectedf("eof in string")
 
 			default:
 				s.buf.WriteRune(s.char)
@@ -229,7 +229,7 @@ func (s *Scanner) Scan() (*Token, error) {
 				'\f', '\x0e', '\x0f', '\x10', '\x11', '\x12', '\x13', '\x14', '\x15', '\x16',
 				'\x17', '\x18', '\x19', '\x1a', '\x1b', '\x1c', '\x1d', '\x1e', '\x1f', '\x7f':
 
-				return nil, s.errorUnexpectedf("%q in comment", s.char)
+				return nil, s.errUnexpectedf("%q in comment", s.char)
 
 			default:
 				s.buf.WriteRune(s.char)
@@ -249,10 +249,10 @@ func (s *Scanner) Scan() (*Token, error) {
 			return s.scanSingle(TokenNewline)
 
 		case eof:
-			return nil, s.errorUnexpectedf("eof after '\r'")
+			return nil, s.errUnexpectedf("eof after '\r'")
 
 		default:
-			return nil, s.errorUnexpectedf("%q after '\r'", s.char)
+			return nil, s.errUnexpectedf("%q after '\r'", s.char)
 		}
 
 	case eof:
@@ -263,7 +263,7 @@ func (s *Scanner) Scan() (*Token, error) {
 			return s.scanSymbol(s.pos)
 		}
 
-		return nil, s.errorUnexpectedf("%q", s.char)
+		return nil, s.errUnexpectedf("%q", s.char)
 	}
 }
 
@@ -283,7 +283,7 @@ func (s *Scanner) scanZero(pos Position) (*Token, error) {
 		return &Token{TokenInt, s.extract(), pos}, nil
 
 	default:
-		return nil, s.errorUnexpectedf("%q after '0'", s.char)
+		return nil, s.errUnexpectedf("%q after '0'", s.char)
 	}
 }
 
@@ -307,7 +307,7 @@ func (s *Scanner) scanDigit(pos Position) (*Token, error) {
 			return &Token{TokenInt, s.extract(), pos}, nil
 
 		default:
-			return nil, s.errorUnexpectedf("%q after digit", s.char)
+			return nil, s.errUnexpectedf("%q after digit", s.char)
 		}
 	}
 }
@@ -335,15 +335,15 @@ func (s *Scanner) scanDecimal(pos Position) (*Token, error) {
 				return &Token{TokenFloat, s.extract(), pos}, nil
 
 			default:
-				return nil, s.errorUnexpectedf("%q in decimal", s.char)
+				return nil, s.errUnexpectedf("%q in decimal", s.char)
 			}
 		}
 
 	case eof:
-		return nil, s.errorUnexpectedf("eof after '.'")
+		return nil, s.errUnexpectedf("eof after '.'")
 
 	default:
-		return nil, s.errorUnexpectedf("%q after '.'", s.char)
+		return nil, s.errUnexpectedf("%q after '.'", s.char)
 	}
 }
 
@@ -370,17 +370,17 @@ func (s *Scanner) scanExponent(pos Position) (*Token, error) {
 			}
 
 		case eof:
-			return nil, s.errorUnexpectedf("eof after exponent sign")
+			return nil, s.errUnexpectedf("eof after exponent sign")
 
 		default:
-			return nil, s.errorUnexpectedf("%q after exponent sign", s.char)
+			return nil, s.errUnexpectedf("%q after exponent sign", s.char)
 		}
 
 	case eof:
-		return nil, s.errorUnexpectedf("eof after exponent")
+		return nil, s.errUnexpectedf("eof after exponent")
 
 	default:
-		return nil, s.errorUnexpectedf("%q after exponent", s.char)
+		return nil, s.errUnexpectedf("%q after exponent", s.char)
 	}
 
 	for {
@@ -394,7 +394,7 @@ func (s *Scanner) scanExponent(pos Position) (*Token, error) {
 			return &Token{TokenFloat, s.extract(), pos}, nil
 
 		default:
-			return nil, s.errorUnexpectedf("%q in exponent", s.char)
+			return nil, s.errUnexpectedf("%q in exponent", s.char)
 		}
 	}
 }
@@ -426,7 +426,7 @@ func (s *Scanner) scanSymbol(pos Position) (*Token, error) {
 				continue
 			}
 
-			return nil, s.errorUnexpectedf("%q in symbol", s.char)
+			return nil, s.errUnexpectedf("%q in symbol", s.char)
 		}
 	}
 }
@@ -452,14 +452,14 @@ func (s *Scanner) scanDot(pos Position) (*Token, error) {
 		return &Token{TokenSymbol, s.extract(), pos}, nil
 
 	case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9':
-		return nil, s.errorUnexpectedf("digit after '.'")
+		return nil, s.errUnexpectedf("digit after '.'")
 
 	default:
 		if unicode.IsLetter(s.char) {
 			return s.scanSymbol(pos)
 		}
 
-		return nil, s.errorUnexpectedf("%q in symbol", s.char)
+		return nil, s.errUnexpectedf("%q in symbol", s.char)
 	}
 }
 
@@ -486,7 +486,7 @@ func (s *Scanner) scanSingleTerm(kind TokenKind) (*Token, error) {
 		return &Token{kind, "", pos}, nil
 
 	default:
-		return nil, s.errorUnexpectedf("%q after %q", s.char, char)
+		return nil, s.errUnexpectedf("%q after %q", s.char, char)
 	}
 }
 
@@ -524,6 +524,6 @@ func (s *Scanner) extract() string {
 	return val
 }
 
-func (s *Scanner) errorUnexpectedf(format string, args ...any) error {
+func (s *Scanner) errUnexpectedf(format string, args ...any) error {
 	return fmt.Errorf("%s unexpected %s", s.pos, fmt.Sprintf(format, args...))
 }

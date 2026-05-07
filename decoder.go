@@ -43,12 +43,10 @@ func (d *Decoder) decode(scope scopeType) (any, error) {
 
 		switch tok.Kind {
 		case TokenInt:
-			val, err := strconv.Atoi(tok.Val)
-			return val, err
+			return strconv.Atoi(tok.Val)
 
 		case TokenFloat:
-			val, err := strconv.ParseFloat(tok.Val, 64)
-			return val, err
+			return strconv.ParseFloat(tok.Val, 64)
 
 		case TokenString:
 			return tok.Val, nil

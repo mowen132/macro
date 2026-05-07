@@ -86,7 +86,7 @@ func (p *Printer) PrintFloat(val string) error {
 
 func (p *Printer) PrintString(val string) error {
 	var s strings.Builder
-	s.Grow(len(val) + 2)
+	s.Grow(len(val) * 2)
 	s.WriteByte('"')
 
 	for _, c := range val {
@@ -188,9 +188,15 @@ func (p *Printer) Flush() error {
 }
 
 func (p *Printer) writeString(s string) error {
-	p.pos.Col += len(s)
-	_, err := p.writer.WriteString(s)
-	return err
+	for _, c := range s {
+		if _, err := p.writer.WriteRune(c); err != nil {
+			return err
+		}
+
+		p.pos.Col++
+	}
+
+	return nil
 }
 
 func (p *Printer) writeByte(c byte) error {

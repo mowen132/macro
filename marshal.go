@@ -23,6 +23,5 @@ func Marshal(val any) ([]byte, error) {
 }
 
 func Unmarshal(b []byte) (any, error) {
-	d := NewDecoder(bytes.NewReader(b))
-	return d.Decode()
+	return NewDecoder(bytes.NewReader(b)).Decode()
 }

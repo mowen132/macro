@@ -36,61 +36,61 @@ const (
 )
 
 func (t *Token) String() string {
-	prefix := t.Pos.String()
+	pos := t.Pos.String()
 
 	switch t.Kind {
 	case TokenInt:
-		return fmt.Sprintf("INT %s %v", prefix, t.Val)
+		return fmt.Sprintf("INT %s %v", pos, t.Val)
 
 	case TokenFloat:
-		return fmt.Sprintf("FLT %s %v", prefix, t.Val)
+		return fmt.Sprintf("FLT %s %v", pos, t.Val)
 
 	case TokenString:
-		return fmt.Sprintf("STR %s %q", prefix, t.Val)
+		return fmt.Sprintf("STR %s %q", pos, t.Val)
 
 	case TokenSymbol:
-		return fmt.Sprintf("SYM %s %q", prefix, t.Val)
+		return fmt.Sprintf("SYM %s %q", pos, t.Val)
 
 	case TokenLeftParenthesis:
-		return "LPA " + prefix
+		return "LPA " + pos
 
 	case TokenRightParenthesis:
-		return "RPA " + prefix
+		return "RPA " + pos
 
 	case TokenLeftSquare:
-		return "LSQ " + prefix
+		return "LSQ " + pos
 
 	case TokenRightSquare:
-		return "RSQ " + prefix
+		return "RSQ " + pos
 
 	case TokenLeftCurly:
-		return "LCU " + prefix
+		return "LCU " + pos
 
 	case TokenRightCurly:
-		return "RCU " + prefix
+		return "RCU " + pos
 
 	case TokenQuote:
-		return "QUO " + prefix
+		return "QUO " + pos
 
 	case TokenQuasiquote:
-		return "QQU " + prefix
+		return "QQU " + pos
 
 	case TokenUnquote:
-		return "UNQ " + prefix
+		return "UNQ " + pos
 
 	case TokenWhitespace:
-		return fmt.Sprintf("WHI %s %q", prefix, t.Val)
+		return fmt.Sprintf("WHI %s %q", pos, t.Val)
 
 	case TokenComment:
-		return fmt.Sprintf("CMT %s %q", prefix, t.Val)
+		return fmt.Sprintf("CMT %s %q", pos, t.Val)
 
 	case TokenNewline:
-		return "NEW " + prefix
+		return "NEW " + pos
 
 	case TokenEnd:
-		return "END " + prefix
+		return "END " + pos
 
 	default:
-		return fmt.Sprintf("UNK %s %v", prefix, t.Val)
+		return fmt.Sprintf("UNK %s %v", pos, t.Val)
 	}
 }
