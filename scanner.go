@@ -23,6 +23,11 @@ type Scanner struct {
 	buf    strings.Builder
 }
 
+type ScanError struct {
+	Message string
+	Pos     Position
+}
+
 func NewScanner(r io.Reader) *Scanner {
 	return &Scanner{
 		reader: bufio.NewReader(r),
@@ -525,5 +530,12 @@ func (s *Scanner) extract() string {
 }
 
 func (s *Scanner) errUnexpectedf(format string, args ...any) error {
-	return fmt.Errorf("%s unexpected %s", s.pos, fmt.Sprintf(format, args...))
+	return &ScanError{
+		Message: fmt.Sprintf("unexpected "+format, args...),
+		Pos:     s.pos,
+	}
+}
+
+func (e *ScanError) Error() string {
+	return fmt.Sprintf("%s %s", e.Pos, e.Message)
 }
