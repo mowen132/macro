@@ -1,13 +1,13 @@
 # macro
 
-A lightweight and generic **S-expression (sexp)** library for Go.
+A lightweight and generic **S-expression** library for Go.
 
 `macro` provides tools to **encode and decode S-expressions** without any evaluation or runtime. It is designed for:
 
-- **Serialization/Deserialization** – Store and retrieve structured data in a simple format.
-- **DSLs & Preprocessors** – Build lightweight languages or configuration layers on top of S-expressions.
+- Serialization/Deserialization
+- DSLs & Preprocessors
 
-The library offers both **low-level token-based APIs** and **high-level encoder/decoder APIs**, allowing you to choose the level of control you need.
+The library offers both **low-level token-based APIs** and **high-level AST-based APIs**, allowing you to choose the level of control you need.
 
 ---
 
@@ -21,8 +21,6 @@ go get github.com/mowen132/macro
 
 ## Quick Start
 
-### Encode a Value
-
 ```go
 package main
 
@@ -32,17 +30,17 @@ import (
 )
 
 func main() {
-    data := []any{
-        macro.Symbol("define"),
-        macro.Symbol("x"),
-        42,
-    }
-
-    b, err := macro.Marshal(data)
+    ast, err := macro.Unmarshal([]byte("(define x 42)"))
     if err != nil {
         panic(err)
     }
 
+    /* Put additional logic here! */
+
+    b, err := macro.Marshal(ast)
+    if err != nil {
+        panic(err)
+    }
     fmt.Println(string(b))
 }
 ```
@@ -53,28 +51,6 @@ Output:
 (define x 42)
 ```
 
-### Decode a Value
-
-```go
-package main
-
-import (
-    "fmt"
-    "github.com/mowen132/macro"
-)
-
-func main() {
-    input := []byte("(define x 42)")
-
-    val, err := macro.Unmarshal(input)
-    if err != nil {
-        panic(err)
-    }
-
-    fmt.Printf("%#v\n", val)
-}
-```
-
 ---
 
 ## API Overview
@@ -82,7 +58,7 @@ func main() {
 `macro` provides two levels of API:
 
 1. **Low-Level API** – Work directly with tokens (`Scanner`, `Printer`, `Token`, `Position`).
-2. **High-Level API** – Encode and decode Go values (`Decoder`, `Encoder`, `Symbol`, `Marshal`, `Unmarshal`).
+2. **High-Level API** – Encode and decode abstract syntax trees (`Decoder`, `Encoder`, `Marshal`, `Unmarshal`).
 
 ---
 
@@ -97,12 +73,12 @@ s := macro.NewScanner(strings.NewReader("(foo 123)"))
 for {
     tok, err := s.Scan()
     if err != nil {
-        log.Fatal(err)
+        panic(err)
     }
-    if tok.Kind == macro.EndToken {
+    if tok.Kind == macro.TokenEOF {
         break
     }
-    fmt.Printf("Token: %v (value: %v)\n", tok.Kind, tok.Val)
+    fmt.Println(tok)
 }
 ```
 
@@ -116,10 +92,9 @@ p := macro.NewPrinter(&b)
 p.PrintLeftParenthesis()
 p.PrintSymbol("foo")
 p.PrintWhitespace(" ")
-p.PrintInt(123)
+p.PrintInt("123")
 p.PrintRightParenthesis()
 p.Flush()
-
 fmt.Println(b.String()) // (foo 123)
 ```
 
@@ -137,7 +112,7 @@ type Token struct {
 
 #### Position
 
-Represents a token’s position in the input.
+Represents a position:
 
 ```go
 type Position struct {
@@ -152,32 +127,23 @@ type Position struct {
 
 #### Decoder
 
-Decodes an S-expression stream into Go values.
+Decodes an S-expression into an abstract syntax tree.
 
 ```go
 d := macro.NewDecoder(strings.NewReader("(1 2 3)"))
-val, err := d.Decode()
-// val will be []any{1, 2, 3}
+ast, err := d.Decode()
 ```
 
 #### Encoder
 
-Encodes Go values into S-expressions.
+Encodes an abstract syntax tree into an S-expressions.
 
 ```go
 var b bytes.Buffer
 e := macro.NewEncoder(&b)
-e.Encode([]any{macro.Symbol("foo"), 123})
+e.Encode(ast)
 e.Flush()
-fmt.Println(b.String()) // (foo 123)
-```
-
-#### Symbol
-
-Represents a Lisp-like symbol:
-
-```go
-type Symbol string
+fmt.Println(b.String())
 ```
 
 #### Marshal / Unmarshal
@@ -185,8 +151,11 @@ type Symbol string
 Convenience functions for one-shot encoding and decoding:
 
 ```go
-b, _ := macro.Marshal([]any{macro.Symbol("bar"), 99})
-val, _ := macro.Unmarshal(b)
+b, err := macro.Marshal(ast)
+```
+
+```go
+ast, err := macro.Unmarshal(b)
 ```
 
 ---

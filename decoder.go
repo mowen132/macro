@@ -6,117 +6,332 @@ package macro
 import (
 	"fmt"
 	"io"
-	"strconv"
 )
 
-type scopeType int
-
-const (
-	scopeDoc scopeType = iota
-	scopeList
-	scopeListLiteral
-	scopeDictLiteral
-	scopeQuote
-)
+const tokenBOF TokenKind = -1
 
 type Decoder struct {
 	scanner *Scanner
+	token   *Token
+	depth   int
 }
 
 func NewDecoder(r io.Reader) *Decoder {
 	return &Decoder{
 		scanner: NewScanner(r),
+		token:   &Token{Kind: tokenBOF},
+		depth:   0,
 	}
 }
 
-func (d *Decoder) Decode() (any, error) {
-	return d.decode(scopeDoc)
-}
+func (d *Decoder) Decode() (Node, error) {
+	switch d.token.Kind {
+	case tokenBOF:
+		if err := d.scan(); err != nil {
+			return nil, err
+		}
 
-func (d *Decoder) decode(scope scopeType) (any, error) {
-	for {
-		tok, err := d.scanner.Scan()
+		return d.Decode()
+
+	case TokenInt:
+		token := d.token
+
+		if err := d.scan(); err != nil {
+			return nil, err
+		}
+
+		return &NodeInt{
+			Val: token.Val,
+			Pos: token.Pos,
+		}, nil
+
+	case TokenFloat:
+		token := d.token
+
+		if err := d.scan(); err != nil {
+			return nil, err
+		}
+
+		return &NodeFloat{
+			Val: token.Val,
+			Pos: token.Pos,
+		}, nil
+
+	case TokenString:
+		token := d.token
+
+		if err := d.scan(); err != nil {
+			return nil, err
+		}
+
+		return &NodeString{
+			Val: token.Val,
+			Pos: token.Pos,
+		}, nil
+
+	case TokenSymbol:
+		token := d.token
+
+		if err := d.scan(); err != nil {
+			return nil, err
+		}
+
+		return &NodeSymbol{
+			Val: token.Val,
+			Pos: token.Pos,
+		}, nil
+
+	case TokenLeftParenthesis:
+		d.depth++
+		pos := d.token.Pos
+
+		if err := d.scan(); err != nil {
+			return nil, err
+		}
+
+		head, err := d.Decode()
 
 		if err != nil {
 			return nil, err
 		}
 
-		switch tok.Kind {
-		case TokenInt:
-			return strconv.Atoi(tok.Val)
+		args := make([]Node, 0)
 
-		case TokenFloat:
-			return strconv.ParseFloat(tok.Val, 64)
+		for d.token.Kind != TokenRightParenthesis {
+			arg, err := d.Decode()
 
-		case TokenString:
-			return tok.Val, nil
+			if err != nil {
+				return nil, err
+			}
 
-		case TokenSymbol:
-			return Symbol(tok.Val), nil
-
-		case TokenLeftParenthesis:
-			return d.decodeList(scopeList, []any{})
-
-		case TokenRightParenthesis:
-			return nil, d.checkEndDelimiter(scope == scopeList, tok.Pos, ")")
-
-		case TokenLeftSquare:
-			return d.decodeList(scopeListLiteral, []any{Symbol("list")})
-
-		case TokenRightSquare:
-			return nil, d.checkEndDelimiter(scope == scopeListLiteral, tok.Pos, "]")
-
-		case TokenLeftCurly:
-			return d.decodeList(scopeDictLiteral, []any{Symbol("dict")})
-
-		case TokenRightCurly:
-			return nil, d.checkEndDelimiter(scope == scopeDictLiteral, tok.Pos, "}")
-
-		case TokenQuote:
-			return d.decodeQuoted("quote")
-
-		case TokenQuasiquote:
-			return d.decodeQuoted("quasiquote")
-
-		case TokenUnquote:
-			return d.decodeQuoted("unquote")
-
-		case TokenEnd:
-			return nil, d.checkEndDelimiter(scope == scopeDoc, tok.Pos, "eof")
+			args = append(args, arg)
 		}
-	}
-}
 
-func (d *Decoder) decodeList(scope scopeType, list []any) ([]any, error) {
-	for {
-		val, err := d.decode(scope)
+		if err := d.scan(); err != nil {
+			return nil, err
+		}
+
+		d.depth--
+
+		return &NodeCall{
+			Head: head,
+			Args: args,
+			Pos:  pos,
+		}, nil
+
+	case TokenLeftSquare:
+		d.depth++
+		pos := d.token.Pos
+
+		if err := d.scan(); err != nil {
+			return nil, err
+		}
+
+		elems := make([]Node, 0)
+
+		for d.token.Kind != TokenRightSquare {
+			elem, err := d.Decode()
+
+			if err != nil {
+				return nil, err
+			}
+
+			elems = append(elems, elem)
+		}
+
+		if err := d.scan(); err != nil {
+			return nil, err
+		}
+
+		d.depth--
+
+		return &NodeList{
+			Elems: elems,
+			Pos:   pos,
+		}, nil
+
+	case TokenLeftCurly:
+		d.depth++
+		pos := d.token.Pos
+
+		if err := d.scan(); err != nil {
+			return nil, err
+		}
+
+		pairs := make([]*KeyValPair, 0)
+
+		for d.token.Kind != TokenRightCurly {
+			key, err := d.Decode()
+
+			if err != nil {
+				return nil, err
+			}
+
+			val, err := d.Decode()
+
+			if err != nil {
+				return nil, err
+			}
+
+			pairs = append(pairs, &KeyValPair{
+				Key: key,
+				Val: val,
+			})
+		}
+
+		if err := d.scan(); err != nil {
+			return nil, err
+		}
+
+		d.depth--
+
+		return &NodeDict{
+			Pairs: pairs,
+			Pos:   pos,
+		}, nil
+
+	case TokenQuote:
+		d.depth++
+		pos := d.token.Pos
+
+		if err := d.scan(); err != nil {
+			return nil, err
+		}
+
+		val, err := d.Decode()
 
 		if err != nil {
 			return nil, err
 		}
 
-		if val != nil {
-			list = append(list, val)
-		} else {
-			return list, nil
+		d.depth--
+
+		return &NodeQuote{
+			Val: val,
+			Pos: pos,
+		}, nil
+
+	case TokenQuasiquote:
+		d.depth++
+		pos := d.token.Pos
+
+		if err := d.scan(); err != nil {
+			return nil, err
+		}
+
+		val, err := d.Decode()
+
+		if err != nil {
+			return nil, err
+		}
+
+		d.depth--
+
+		return &NodeQuasiquote{
+			Val: val,
+			Pos: pos,
+		}, nil
+
+	case TokenUnquote:
+		d.depth++
+		pos := d.token.Pos
+
+		if err := d.scan(); err != nil {
+			return nil, err
+		}
+
+		val, err := d.Decode()
+
+		if err != nil {
+			return nil, err
+		}
+
+		d.depth--
+
+		return &NodeUnquote{
+			Val: val,
+			Pos: pos,
+		}, nil
+
+	case TokenEOF:
+		if d.depth == 0 {
+			return &NodeEOF{
+				Pos: d.token.Pos,
+			}, nil
+		}
+	}
+
+	return nil, d.unexpected()
+}
+
+func (d *Decoder) scan() error {
+	for {
+		token, err := d.scanner.Scan()
+
+		if err != nil {
+			return err
+		}
+
+		switch token.Kind {
+		case TokenWhitespace, TokenComment, TokenNewline:
+		default:
+			d.token = token
+			return nil
 		}
 	}
 }
 
-func (d *Decoder) checkEndDelimiter(expected bool, pos Position, delim string) error {
-	if !expected {
-		return fmt.Errorf("%s unexpected %s", pos, delim)
-	}
-
-	return nil
+func (d *Decoder) unexpected() *ParseError {
+	return NewParseError(
+		fmt.Sprintf("unexpected %s", describe(d.token.Kind)),
+		d.token.Pos,
+	)
 }
 
-func (d *Decoder) decodeQuoted(name string) (any, error) {
-	val, err := d.decode(scopeQuote)
+func describe(kind TokenKind) string {
+	switch kind {
+	case TokenInt:
+		return "int"
 
-	if err != nil {
-		return nil, err
+	case TokenFloat:
+		return "float"
+
+	case TokenString:
+		return "string"
+
+	case TokenSymbol:
+		return "symbol"
+
+	case TokenLeftParenthesis:
+		return "("
+
+	case TokenRightParenthesis:
+		return ")"
+
+	case TokenLeftSquare:
+		return "["
+
+	case TokenRightSquare:
+		return "]"
+
+	case TokenLeftCurly:
+		return "{"
+
+	case TokenRightCurly:
+		return "}"
+
+	case TokenQuote:
+		return "'"
+
+	case TokenQuasiquote:
+		return "`"
+
+	case TokenUnquote:
+		return ","
+
+	case TokenEOF:
+		return "eof"
 	}
 
-	return []any{Symbol(name), val}, nil
+	return "unknown"
 }

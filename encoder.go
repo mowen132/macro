@@ -4,9 +4,7 @@
 package macro
 
 import (
-	"fmt"
 	"io"
-	"strconv"
 )
 
 type Encoder struct {
@@ -19,89 +17,130 @@ func NewEncoder(w io.Writer) *Encoder {
 	}
 }
 
-func (e *Encoder) Encode(val any) error {
-	var err error
-
-	switch v := val.(type) {
-	case int:
-		err = e.printer.PrintInt(strconv.Itoa(v))
-
-	case float64:
-		err = e.printer.PrintFloat(strconv.FormatFloat(v, 'g', -1, 64))
-
-	case string:
-		err = e.printer.PrintString(v)
-
-	case Symbol:
-		err = e.printer.PrintSymbol(string(v))
-
-	case []any:
-		err = e.encodeList(v)
-
-	default:
-		err = fmt.Errorf("unsupported type: %T", val)
-	}
-
-	return err
-}
-
-func (e *Encoder) encodeList(list []any) error {
-	p := e.printer
-
-	if len(list) > 0 {
-		if v, ok := list[0].(Symbol); ok {
-			switch v {
-			case "list":
-				return e.encodeDelimitedList(list[1:], p.PrintLeftSquare, p.PrintRightSquare)
-
-			case "dict":
-				return e.encodeDelimitedList(list[1:], p.PrintLeftCurly, p.PrintRightCurly)
-
-			case "quote":
-				return e.encodeQuoted(list[1:], p.PrintQuote, "quote")
-
-			case "quasiquote":
-				return e.encodeQuoted(list[1:], p.PrintQuasiquote, "quasiquote")
-
-			case "unquote":
-				return e.encodeQuoted(list[1:], p.PrintUnquote, "unquote")
-			}
+func (e *Encoder) Encode(expr Node) error {
+	switch node := expr.(type) {
+	case *NodeInt:
+		if err := e.printer.PrintInt(node.Val); err != nil {
+			return err
 		}
-	}
 
-	return e.encodeDelimitedList(list, p.PrintLeftParenthesis, p.PrintRightParenthesis)
-}
+	case *NodeFloat:
+		if err := e.printer.PrintFloat(node.Val); err != nil {
+			return err
+		}
 
-func (e *Encoder) encodeDelimitedList(list []any, printLeft, printRight func() error) error {
-	if err := printLeft(); err != nil {
-		return err
-	}
+	case *NodeString:
+		if err := e.printer.PrintString(node.Val); err != nil {
+			return err
+		}
 
-	for i, v := range list {
-		if i > 0 {
+	case *NodeSymbol:
+		if err := e.printer.PrintSymbol(node.Val); err != nil {
+			return err
+		}
+
+	case *NodeCall:
+		if err := e.printer.PrintLeftParenthesis(); err != nil {
+			return err
+		}
+
+		if err := e.Encode(node.Head); err != nil {
+			return err
+		}
+
+		for _, arg := range node.Args {
 			if err := e.printer.PrintWhitespace(" "); err != nil {
+				return err
+			}
+
+			if err := e.Encode(arg); err != nil {
 				return err
 			}
 		}
 
-		if err := e.Encode(v); err != nil {
+		if err := e.printer.PrintRightParenthesis(); err != nil {
+			return err
+		}
+
+	case *NodeList:
+		if err := e.printer.PrintLeftSquare(); err != nil {
+			return err
+		}
+
+		for i, elem := range node.Elems {
+			if i > 0 {
+				if err := e.printer.PrintWhitespace(" "); err != nil {
+					return err
+				}
+			}
+
+			if err := e.Encode(elem); err != nil {
+				return err
+			}
+		}
+
+		if err := e.printer.PrintRightSquare(); err != nil {
+			return err
+		}
+
+	case *NodeDict:
+		if err := e.printer.PrintLeftCurly(); err != nil {
+			return err
+		}
+
+		for i, pair := range node.Pairs {
+			if i > 0 {
+				if err := e.printer.PrintWhitespace(" "); err != nil {
+					return err
+				}
+			}
+
+			if err := e.Encode(pair.Key); err != nil {
+				return err
+			}
+
+			if err := e.printer.PrintWhitespace(" "); err != nil {
+				return err
+			}
+
+			if err := e.Encode(pair.Val); err != nil {
+				return err
+			}
+		}
+
+		if err := e.printer.PrintRightCurly(); err != nil {
+			return err
+		}
+
+	case *NodeQuote:
+		if err := e.printer.PrintQuote(); err != nil {
+			return err
+		}
+
+		if err := e.Encode(node.Val); err != nil {
+			return err
+		}
+
+	case *NodeQuasiquote:
+		if err := e.printer.PrintQuasiquote(); err != nil {
+			return err
+		}
+
+		if err := e.Encode(node.Val); err != nil {
+			return err
+		}
+
+	case *NodeUnquote:
+		if err := e.printer.PrintUnquote(); err != nil {
+			return err
+		}
+
+		if err := e.Encode(node.Val); err != nil {
 			return err
 		}
 	}
 
-	return printRight()
-}
-
-func (e *Encoder) encodeQuoted(list []any, print func() error, name string) error {
-	if len(list) != 1 {
-		return fmt.Errorf("wrong number of arguments in %s", name)
-	}
-
-	if err := print(); err != nil {
-		return err
-	}
-
-	return e.Encode(list[0])
+	return nil
 }
 
 func (e *Encoder) Flush() error {

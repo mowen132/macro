@@ -32,7 +32,7 @@ const (
 	TokenWhitespace
 	TokenComment
 	TokenNewline
-	TokenEnd
+	TokenEOF
 )
 
 func (t *Token) String() string {
@@ -87,8 +87,8 @@ func (t *Token) String() string {
 	case TokenNewline:
 		return "NEW " + pos
 
-	case TokenEnd:
-		return "END " + pos
+	case TokenEOF:
+		return "EOF " + pos
 
 	default:
 		return fmt.Sprintf("UNK %s %v", pos, t.Val)
