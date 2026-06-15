@@ -8,8 +8,6 @@ import (
 	"io"
 )
 
-const tokenBOF TokenKind = -1
-
 type Decoder struct {
 	scanner *Scanner
 	token   *Token
@@ -19,14 +17,14 @@ type Decoder struct {
 func NewDecoder(r io.Reader) *Decoder {
 	return &Decoder{
 		scanner: NewScanner(r),
-		token:   &Token{Kind: tokenBOF},
+		token:   BOFToken,
 		depth:   0,
 	}
 }
 
-func (d *Decoder) Decode() (Node, error) {
+func (d *Decoder) Decode() (any, error) {
 	switch d.token.Kind {
-	case tokenBOF:
+	case TokenBOF:
 		if err := d.scan(); err != nil {
 			return nil, err
 		}
@@ -40,10 +38,7 @@ func (d *Decoder) Decode() (Node, error) {
 			return nil, err
 		}
 
-		return &NodeInt{
-			Val: token.Val,
-			Pos: token.Pos,
-		}, nil
+		return NewIntNode(token.Val, token.Pos), nil
 
 	case TokenFloat:
 		token := d.token
@@ -52,10 +47,7 @@ func (d *Decoder) Decode() (Node, error) {
 			return nil, err
 		}
 
-		return &NodeFloat{
-			Val: token.Val,
-			Pos: token.Pos,
-		}, nil
+		return NewFloatNode(token.Val, token.Pos), nil
 
 	case TokenString:
 		token := d.token
@@ -64,10 +56,7 @@ func (d *Decoder) Decode() (Node, error) {
 			return nil, err
 		}
 
-		return &NodeString{
-			Val: token.Val,
-			Pos: token.Pos,
-		}, nil
+		return NewStringNode(token.Val, token.Pos), nil
 
 	case TokenSymbol:
 		token := d.token
@@ -76,14 +65,11 @@ func (d *Decoder) Decode() (Node, error) {
 			return nil, err
 		}
 
-		return &NodeSymbol{
-			Val: token.Val,
-			Pos: token.Pos,
-		}, nil
+		return NewSymbolNode(token.Val, token.Pos), nil
 
 	case TokenLeftParenthesis:
-		d.depth++
 		pos := d.token.Pos
+		d.depth++
 
 		if err := d.scan(); err != nil {
 			return nil, err
@@ -95,7 +81,7 @@ func (d *Decoder) Decode() (Node, error) {
 			return nil, err
 		}
 
-		args := make([]Node, 0)
+		args := make([]any, 0)
 
 		for d.token.Kind != TokenRightParenthesis {
 			arg, err := d.Decode()
@@ -112,22 +98,17 @@ func (d *Decoder) Decode() (Node, error) {
 		}
 
 		d.depth--
-
-		return &NodeCall{
-			Head: head,
-			Args: args,
-			Pos:  pos,
-		}, nil
+		return NewCallNode(head, args, pos), nil
 
 	case TokenLeftSquare:
-		d.depth++
 		pos := d.token.Pos
+		d.depth++
 
 		if err := d.scan(); err != nil {
 			return nil, err
 		}
 
-		elems := make([]Node, 0)
+		elems := make([]any, 0)
 
 		for d.token.Kind != TokenRightSquare {
 			elem, err := d.Decode()
@@ -144,15 +125,11 @@ func (d *Decoder) Decode() (Node, error) {
 		}
 
 		d.depth--
-
-		return &NodeList{
-			Elems: elems,
-			Pos:   pos,
-		}, nil
+		return NewListNode(elems, pos), nil
 
 	case TokenLeftCurly:
-		d.depth++
 		pos := d.token.Pos
+		d.depth++
 
 		if err := d.scan(); err != nil {
 			return nil, err
@@ -173,10 +150,7 @@ func (d *Decoder) Decode() (Node, error) {
 				return nil, err
 			}
 
-			pairs = append(pairs, &KeyValPair{
-				Key: key,
-				Val: val,
-			})
+			pairs = append(pairs, NewKeyValPair(key, val))
 		}
 
 		if err := d.scan(); err != nil {
@@ -184,80 +158,62 @@ func (d *Decoder) Decode() (Node, error) {
 		}
 
 		d.depth--
-
-		return &NodeDict{
-			Pairs: pairs,
-			Pos:   pos,
-		}, nil
+		return NewDictNode(pairs, pos), nil
 
 	case TokenQuote:
-		d.depth++
 		pos := d.token.Pos
+		d.depth++
 
 		if err := d.scan(); err != nil {
 			return nil, err
 		}
 
-		val, err := d.Decode()
+		arg, err := d.Decode()
 
 		if err != nil {
 			return nil, err
 		}
 
 		d.depth--
-
-		return &NodeQuote{
-			Val: val,
-			Pos: pos,
-		}, nil
+		return NewQuoteNode(arg, pos), nil
 
 	case TokenQuasiquote:
-		d.depth++
 		pos := d.token.Pos
+		d.depth++
 
 		if err := d.scan(); err != nil {
 			return nil, err
 		}
 
-		val, err := d.Decode()
+		arg, err := d.Decode()
 
 		if err != nil {
 			return nil, err
 		}
 
 		d.depth--
-
-		return &NodeQuasiquote{
-			Val: val,
-			Pos: pos,
-		}, nil
+		return NewQuasiquoteNode(arg, pos), nil
 
 	case TokenUnquote:
-		d.depth++
 		pos := d.token.Pos
+		d.depth++
 
 		if err := d.scan(); err != nil {
 			return nil, err
 		}
 
-		val, err := d.Decode()
+		arg, err := d.Decode()
 
 		if err != nil {
 			return nil, err
 		}
 
 		d.depth--
-
-		return &NodeUnquote{
-			Val: val,
-			Pos: pos,
-		}, nil
+		return NewUnquoteNode(arg, pos), nil
 
 	case TokenEOF:
 		if d.depth == 0 {
-			return &NodeEOF{
-				Pos: d.token.Pos,
-			}, nil
+			return NewEOFNode(d.token.Pos), nil
 		}
 	}
 
@@ -281,7 +237,7 @@ func (d *Decoder) scan() error {
 	}
 }
 
-func (d *Decoder) unexpected() *ParseError {
+func (d *Decoder) unexpected() error {
 	return NewParseError(
 		fmt.Sprintf("unexpected %s", describe(d.token.Kind)),
 		d.token.Pos,

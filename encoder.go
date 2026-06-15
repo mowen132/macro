@@ -17,29 +17,29 @@ func NewEncoder(w io.Writer) *Encoder {
 	}
 }
 
-func (e *Encoder) Encode(expr Node) error {
+func (e *Encoder) Encode(expr any) error {
 	switch node := expr.(type) {
-	case *NodeInt:
+	case *IntNode:
 		if err := e.printer.PrintInt(node.Val); err != nil {
 			return err
 		}
 
-	case *NodeFloat:
+	case *FloatNode:
 		if err := e.printer.PrintFloat(node.Val); err != nil {
 			return err
 		}
 
-	case *NodeString:
+	case *StringNode:
 		if err := e.printer.PrintString(node.Val); err != nil {
 			return err
 		}
 
-	case *NodeSymbol:
+	case *SymbolNode:
 		if err := e.printer.PrintSymbol(node.Val); err != nil {
 			return err
 		}
 
-	case *NodeCall:
+	case *CallNode:
 		if err := e.printer.PrintLeftParenthesis(); err != nil {
 			return err
 		}
@@ -62,7 +62,7 @@ func (e *Encoder) Encode(expr Node) error {
 			return err
 		}
 
-	case *NodeList:
+	case *ListNode:
 		if err := e.printer.PrintLeftSquare(); err != nil {
 			return err
 		}
@@ -83,7 +83,7 @@ func (e *Encoder) Encode(expr Node) error {
 			return err
 		}
 
-	case *NodeDict:
+	case *DictNode:
 		if err := e.printer.PrintLeftCurly(); err != nil {
 			return err
 		}
@@ -112,30 +112,30 @@ func (e *Encoder) Encode(expr Node) error {
 			return err
 		}
 
-	case *NodeQuote:
+	case *QuoteNode:
 		if err := e.printer.PrintQuote(); err != nil {
 			return err
 		}
 
-		if err := e.Encode(node.Val); err != nil {
+		if err := e.Encode(node.Arg); err != nil {
 			return err
 		}
 
-	case *NodeQuasiquote:
+	case *QuasiquoteNode:
 		if err := e.printer.PrintQuasiquote(); err != nil {
 			return err
 		}
 
-		if err := e.Encode(node.Val); err != nil {
+		if err := e.Encode(node.Arg); err != nil {
 			return err
 		}
 
-	case *NodeUnquote:
+	case *UnquoteNode:
 		if err := e.printer.PrintUnquote(); err != nil {
 			return err
 		}
 
-		if err := e.Encode(node.Val); err != nil {
+		if err := e.Encode(node.Arg); err != nil {
 			return err
 		}
 	}

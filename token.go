@@ -16,7 +16,8 @@ type Token struct {
 type TokenKind int
 
 const (
-	TokenInt TokenKind = iota
+	TokenBOF TokenKind = iota
+	TokenInt
 	TokenFloat
 	TokenString
 	TokenSymbol
@@ -35,62 +36,73 @@ const (
 	TokenEOF
 )
 
-func (t *Token) String() string {
-	pos := t.Pos.String()
+var BOFToken = &Token{Kind: TokenBOF}
 
+func NewToken(kind TokenKind, val string, pos Position) *Token {
+	return &Token{
+		Kind: kind,
+		Val:  val,
+		Pos:  pos,
+	}
+}
+
+func (t *Token) String() string {
 	switch t.Kind {
+	case TokenBOF:
+		return fmt.Sprintf("BOF")
+
 	case TokenInt:
-		return fmt.Sprintf("INT %s %v", pos, t.Val)
+		return fmt.Sprintf("INT %v %s", t.Pos, t.Val)
 
 	case TokenFloat:
-		return fmt.Sprintf("FLT %s %v", pos, t.Val)
+		return fmt.Sprintf("FLT %v %s", t.Pos, t.Val)
 
 	case TokenString:
-		return fmt.Sprintf("STR %s %q", pos, t.Val)
+		return fmt.Sprintf("STR %v %q", t.Pos, t.Val)
 
 	case TokenSymbol:
-		return fmt.Sprintf("SYM %s %q", pos, t.Val)
+		return fmt.Sprintf("SYM %v %s", t.Pos, t.Val)
 
 	case TokenLeftParenthesis:
-		return "LPA " + pos
+		return fmt.Sprintf("LPA %v", t.Pos)
 
 	case TokenRightParenthesis:
-		return "RPA " + pos
+		return fmt.Sprintf("RPA %v", t.Pos)
 
 	case TokenLeftSquare:
-		return "LSQ " + pos
+		return fmt.Sprintf("LSQ %v", t.Pos)
 
 	case TokenRightSquare:
-		return "RSQ " + pos
+		return fmt.Sprintf("RSQ %v", t.Pos)
 
 	case TokenLeftCurly:
-		return "LCU " + pos
+		return fmt.Sprintf("LCU %v", t.Pos)
 
 	case TokenRightCurly:
-		return "RCU " + pos
+		return fmt.Sprintf("RCU %v", t.Pos)
 
 	case TokenQuote:
-		return "QUO " + pos
+		return fmt.Sprintf("QUO %v", t.Pos)
 
 	case TokenQuasiquote:
-		return "QQU " + pos
+		return fmt.Sprintf("QQU %v", t.Pos)
 
 	case TokenUnquote:
-		return "UNQ " + pos
+		return fmt.Sprintf("UNQ %v", t.Pos)
 
 	case TokenWhitespace:
-		return fmt.Sprintf("WHI %s %q", pos, t.Val)
+		return fmt.Sprintf("WHI %v %q", t.Pos, t.Val)
 
 	case TokenComment:
-		return fmt.Sprintf("CMT %s %q", pos, t.Val)
+		return fmt.Sprintf("CMT %v %q", t.Pos, t.Val)
 
 	case TokenNewline:
-		return "NEW " + pos
+		return fmt.Sprintf("NEW %v", t.Pos)
 
 	case TokenEOF:
-		return "EOF " + pos
+		return fmt.Sprintf("EOF %v", t.Pos)
 
 	default:
-		return fmt.Sprintf("UNK %s %v", pos, t.Val)
+		return fmt.Sprintf("UNK %v %q", t.Pos, t.Val)
 	}
 }

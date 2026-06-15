@@ -12,15 +12,15 @@ import (
 )
 
 const (
-	bof = -1
-	eof = -2
+	eof = -1
+	bof = -2
 )
 
 type Scanner struct {
-	reader *bufio.Reader
-	char   rune
-	pos    Position
-	buf    strings.Builder
+	reader  *bufio.Reader
+	char    rune
+	pos     Position
+	builder strings.Builder
 }
 
 func NewScanner(r io.Reader) *Scanner {
@@ -69,7 +69,7 @@ func (s *Scanner) Scan() (*Token, error) {
 			return s.scanDot(pos)
 
 		case ')', ']', '}', ' ', '\t', ';', '\n', '\r', eof:
-			return &Token{TokenSymbol, s.extract(), pos}, nil
+			return NewToken(TokenSymbol, s.extract(), pos), nil
 
 		default:
 			if unicode.IsLetter(s.char) {
@@ -101,7 +101,7 @@ func (s *Scanner) Scan() (*Token, error) {
 
 				switch s.char {
 				case ')', ']', '}', ' ', '\t', ';', '\n', '\r', eof:
-					return &Token{TokenString, s.extract(), pos}, nil
+					return NewToken(TokenString, s.extract(), pos), nil
 
 				default:
 					return nil, s.unexpectedf("%q after closing '\"'", s.char)
@@ -114,25 +114,25 @@ func (s *Scanner) Scan() (*Token, error) {
 
 				switch s.char {
 				case '"':
-					s.buf.WriteRune('"')
+					s.builder.WriteRune('"')
 
 				case '\\':
-					s.buf.WriteRune('\\')
+					s.builder.WriteRune('\\')
 
 				case 'b':
-					s.buf.WriteRune('\b')
+					s.builder.WriteRune('\b')
 
 				case 'f':
-					s.buf.WriteRune('\f')
+					s.builder.WriteRune('\f')
 
 				case 'n':
-					s.buf.WriteRune('\n')
+					s.builder.WriteRune('\n')
 
 				case 'r':
-					s.buf.WriteRune('\r')
+					s.builder.WriteRune('\r')
 
 				case 't':
-					s.buf.WriteRune('\t')
+					s.builder.WriteRune('\t')
 
 				case eof:
 					return nil, s.unexpectedf("eof in escape sequence")
@@ -152,7 +152,7 @@ func (s *Scanner) Scan() (*Token, error) {
 				return nil, s.unexpectedf("eof in string")
 
 			default:
-				s.buf.WriteRune(s.char)
+				s.builder.WriteRune(s.char)
 			}
 		}
 
@@ -209,7 +209,7 @@ func (s *Scanner) Scan() (*Token, error) {
 				continue
 
 			default:
-				return &Token{TokenWhitespace, s.extract(), pos}, nil
+				return NewToken(TokenWhitespace, s.extract(), pos), nil
 			}
 		}
 
@@ -223,7 +223,7 @@ func (s *Scanner) Scan() (*Token, error) {
 
 			switch s.char {
 			case '\n', '\r', eof:
-				return &Token{TokenComment, s.extract(), pos}, nil
+				return NewToken(TokenComment, s.extract(), pos), nil
 
 			case '\x00', '\x01', '\x02', '\x03', '\x04', '\x05', '\x06', '\a', '\b', '\v',
 				'\f', '\x0e', '\x0f', '\x10', '\x11', '\x12', '\x13', '\x14', '\x15', '\x16',
@@ -232,7 +232,7 @@ func (s *Scanner) Scan() (*Token, error) {
 				return nil, s.unexpectedf("%q in comment", s.char)
 
 			default:
-				s.buf.WriteRune(s.char)
+				s.builder.WriteRune(s.char)
 			}
 		}
 
@@ -253,14 +253,14 @@ func (s *Scanner) Scan() (*Token, error) {
 			return s.scanSingle(TokenNewline)
 
 		case eof:
-			return nil, s.unexpectedf("eof after '\r'")
+			return nil, s.unexpectedf("eof after '\\r'")
 
 		default:
-			return nil, s.unexpectedf("%q after '\r'", s.char)
+			return nil, s.unexpectedf("%q after '\\r'", s.char)
 		}
 
 	case eof:
-		return &Token{TokenEOF, "", s.pos}, nil
+		return NewToken(TokenEOF, "", s.pos), nil
 
 	default:
 		if unicode.IsLetter(s.char) {
@@ -284,7 +284,7 @@ func (s *Scanner) scanZero(pos Position) (*Token, error) {
 		return s.scanExponent(pos)
 
 	case ')', ']', '}', ' ', '\t', ';', '\n', '\r', eof:
-		return &Token{TokenInt, s.extract(), pos}, nil
+		return NewToken(TokenInt, s.extract(), pos), nil
 
 	default:
 		return nil, s.unexpectedf("%q after '0'", s.char)
@@ -308,7 +308,7 @@ func (s *Scanner) scanDigit(pos Position) (*Token, error) {
 			return s.scanExponent(pos)
 
 		case ')', ']', '}', ' ', '\t', ';', '\n', '\r', eof:
-			return &Token{TokenInt, s.extract(), pos}, nil
+			return NewToken(TokenInt, s.extract(), pos), nil
 
 		default:
 			return nil, s.unexpectedf("%q after digit", s.char)
@@ -336,7 +336,7 @@ func (s *Scanner) scanDecimal(pos Position) (*Token, error) {
 				return s.scanExponent(pos)
 
 			case ')', ']', '}', ' ', '\t', ';', '\n', '\r', eof:
-				return &Token{TokenFloat, s.extract(), pos}, nil
+				return NewToken(TokenFloat, s.extract(), pos), nil
 
 			default:
 				return nil, s.unexpectedf("%q in decimal", s.char)
@@ -395,7 +395,7 @@ func (s *Scanner) scanExponent(pos Position) (*Token, error) {
 			}
 
 		case ')', ']', '}', ' ', '\t', ';', '\n', '\r', eof:
-			return &Token{TokenFloat, s.extract(), pos}, nil
+			return NewToken(TokenFloat, s.extract(), pos), nil
 
 		default:
 			return nil, s.unexpectedf("%q in exponent", s.char)
@@ -423,7 +423,7 @@ func (s *Scanner) scanSymbol(pos Position) (*Token, error) {
 			continue
 
 		case ')', ']', '}', ' ', '\t', ';', '\n', '\r', eof:
-			return &Token{TokenSymbol, s.extract(), pos}, nil
+			return NewToken(TokenSymbol, s.extract(), pos), nil
 
 		default:
 			if unicode.IsLetter(s.char) || unicode.IsDigit(s.char) {
@@ -453,7 +453,7 @@ func (s *Scanner) scanDot(pos Position) (*Token, error) {
 		return s.scanSymbol(pos)
 
 	case ')', ']', '}', ' ', '\t', ';', '\n', '\r', eof:
-		return &Token{TokenSymbol, s.extract(), pos}, nil
+		return NewToken(TokenSymbol, s.extract(), pos), nil
 
 	case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9':
 		return nil, s.unexpectedf("digit after '.'")
@@ -474,7 +474,7 @@ func (s *Scanner) scanSingle(kind TokenKind) (*Token, error) {
 		return nil, err
 	}
 
-	return &Token{kind, "", pos}, nil
+	return NewToken(kind, "", pos), nil
 }
 
 func (s *Scanner) scanSingleTerm(kind TokenKind) (*Token, error) {
@@ -487,7 +487,7 @@ func (s *Scanner) scanSingleTerm(kind TokenKind) (*Token, error) {
 
 	switch s.char {
 	case ')', ']', '}', ' ', '\t', ';', '\n', '\r', eof:
-		return &Token{kind, "", pos}, nil
+		return NewToken(kind, "", pos), nil
 
 	default:
 		return nil, s.unexpectedf("%q after %q", s.char, char)
@@ -511,13 +511,13 @@ func (s *Scanner) read() error {
 }
 
 func (s *Scanner) consume() error {
-	s.buf.WriteRune(s.char)
+	s.builder.WriteRune(s.char)
 	return s.read()
 }
 
 func (s *Scanner) extract() string {
-	val := s.buf.String()
-	s.buf.Reset()
+	val := s.builder.String()
+	s.builder.Reset()
 	return val
 }
 

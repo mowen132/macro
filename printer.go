@@ -7,7 +7,6 @@ import (
 	"bufio"
 	"fmt"
 	"io"
-	"strings"
 )
 
 type Printer struct {
@@ -22,19 +21,19 @@ func NewPrinter(w io.Writer) *Printer {
 	}
 }
 
-func (p *Printer) PrintToken(tok *Token) error {
-	switch tok.Kind {
+func (p *Printer) PrintToken(token *Token) error {
+	switch token.Kind {
 	case TokenInt:
-		return p.PrintInt(tok.Val)
+		return p.PrintInt(token.Val)
 
 	case TokenFloat:
-		return p.PrintFloat(tok.Val)
+		return p.PrintFloat(token.Val)
 
 	case TokenString:
-		return p.PrintString(tok.Val)
+		return p.PrintString(token.Val)
 
 	case TokenSymbol:
-		return p.PrintSymbol(tok.Val)
+		return p.PrintSymbol(token.Val)
 
 	case TokenLeftParenthesis:
 		return p.PrintLeftParenthesis()
@@ -64,16 +63,16 @@ func (p *Printer) PrintToken(tok *Token) error {
 		return p.PrintUnquote()
 
 	case TokenWhitespace:
-		return p.PrintWhitespace(tok.Val)
+		return p.PrintWhitespace(token.Val)
 
 	case TokenComment:
-		return p.PrintComment(tok.Val)
+		return p.PrintComment(token.Val)
 
 	case TokenNewline:
 		return p.PrintNewline()
 	}
 
-	return fmt.Errorf("unsupported token kind: %v", tok.Kind)
+	return fmt.Errorf("unknown token: %v", token.Kind)
 }
 
 func (p *Printer) PrintInt(val string) error {
@@ -85,40 +84,45 @@ func (p *Printer) PrintFloat(val string) error {
 }
 
 func (p *Printer) PrintString(val string) error {
-	var s strings.Builder
-	s.Grow(len(val) * 2)
-	s.WriteByte('"')
+	if err := p.writeRune('"'); err != nil {
+		return err
+	}
 
 	for _, c := range val {
+		var err error
+
 		switch c {
 		case '"':
-			s.WriteString("\\\"")
+			err = p.writeString("\\\"")
 
 		case '\\':
-			s.WriteString("\\\\")
+			err = p.writeString("\\\\")
 
 		case '\b':
-			s.WriteString("\\b")
+			err = p.writeString("\\b")
 
 		case '\f':
-			s.WriteString("\\f")
+			err = p.writeString("\\f")
 
 		case '\n':
-			s.WriteString("\\n")
+			err = p.writeString("\\n")
 
 		case '\r':
-			s.WriteString("\\r")
+			err = p.writeString("\\r")
 
 		case '\t':
-			s.WriteString("\\t")
+			err = p.writeString("\\t")
 
 		default:
-			s.WriteRune(c)
+			err = p.writeRune(c)
+		}
+
+		if err != nil {
+			return err
 		}
 	}
 
-	s.WriteByte('"')
-	return p.writeString(s.String())
+	return p.writeRune('"')
 }
 
 func (p *Printer) PrintSymbol(val string) error {
@@ -126,39 +130,39 @@ func (p *Printer) PrintSymbol(val string) error {
 }
 
 func (p *Printer) PrintLeftParenthesis() error {
-	return p.writeByte('(')
+	return p.writeRune('(')
 }
 
 func (p *Printer) PrintRightParenthesis() error {
-	return p.writeByte(')')
+	return p.writeRune(')')
 }
 
 func (p *Printer) PrintLeftSquare() error {
-	return p.writeByte('[')
+	return p.writeRune('[')
 }
 
 func (p *Printer) PrintRightSquare() error {
-	return p.writeByte(']')
+	return p.writeRune(']')
 }
 
 func (p *Printer) PrintLeftCurly() error {
-	return p.writeByte('{')
+	return p.writeRune('{')
 }
 
 func (p *Printer) PrintRightCurly() error {
-	return p.writeByte('}')
+	return p.writeRune('}')
 }
 
 func (p *Printer) PrintQuote() error {
-	return p.writeByte('\'')
+	return p.writeRune('\'')
 }
 
 func (p *Printer) PrintQuasiquote() error {
-	return p.writeByte('`')
+	return p.writeRune('`')
 }
 
 func (p *Printer) PrintUnquote() error {
-	return p.writeByte(',')
+	return p.writeRune(',')
 }
 
 func (p *Printer) PrintWhitespace(val string) error {
@@ -166,7 +170,7 @@ func (p *Printer) PrintWhitespace(val string) error {
 }
 
 func (p *Printer) PrintComment(val string) error {
-	if err := p.writeByte(';'); err != nil {
+	if err := p.writeRune(';'); err != nil {
 		return err
 	}
 
@@ -174,9 +178,13 @@ func (p *Printer) PrintComment(val string) error {
 }
 
 func (p *Printer) PrintNewline() error {
+	if _, err := p.writer.WriteRune('\n'); err != nil {
+		return err
+	}
+
 	p.pos.Line++
 	p.pos.Col = 1
-	return p.writer.WriteByte('\n')
+	return nil
 }
 
 func (p *Printer) Pos() Position {
@@ -189,17 +197,19 @@ func (p *Printer) Flush() error {
 
 func (p *Printer) writeString(s string) error {
 	for _, c := range s {
-		if _, err := p.writer.WriteRune(c); err != nil {
+		if err := p.writeRune(c); err != nil {
 			return err
 		}
-
-		p.pos.Col++
 	}
 
 	return nil
 }
 
-func (p *Printer) writeByte(c byte) error {
+func (p *Printer) writeRune(c rune) error {
+	if _, err := p.writer.WriteRune(c); err != nil {
+		return err
+	}
+
 	p.pos.Col++
-	return p.writer.WriteByte(c)
+	return nil
 }
