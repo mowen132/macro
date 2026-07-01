@@ -7,7 +7,7 @@ import (
 	"bytes"
 )
 
-func Marshal(expr any) ([]byte, error) {
+func Marshal(expr Node) ([]byte, error) {
 	var b bytes.Buffer
 	encoder := NewEncoder(&b)
 
@@ -22,6 +22,6 @@ func Marshal(expr any) ([]byte, error) {
 	return b.Bytes(), nil
 }
 
-func Unmarshal(b []byte) (any, error) {
+func Unmarshal(b []byte) (Node, error) {
 	return NewDecoder(bytes.NewReader(b)).Decode()
 }

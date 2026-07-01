@@ -4,273 +4,190 @@
 package macro
 
 type Node interface {
-	GetPos() Position
-	SetPos(Position)
+	Pos() *Position
+}
+
+type BaseNode struct {
+	pos Position
+}
+
+func (n *BaseNode) Pos() *Position {
+	return &n.pos
 }
 
 type IntNode struct {
+	BaseNode
 	Val string
-	Pos Position
 }
 
 func NewIntNode(val string, pos Position) *IntNode {
 	return &IntNode{
-		Val: val,
-		Pos: pos,
+		BaseNode: BaseNode{pos},
+		Val:      val,
 	}
 }
 
-func (n *IntNode) GetPos() Position {
-	return n.Pos
-}
-
-func (n *IntNode) SetPos(pos Position) {
-	n.Pos = pos
-}
-
 type FloatNode struct {
+	BaseNode
 	Val string
-	Pos Position
 }
 
 func NewFloatNode(val string, pos Position) *FloatNode {
 	return &FloatNode{
-		Val: val,
-		Pos: pos,
+		BaseNode: BaseNode{pos},
+		Val:      val,
 	}
 }
 
-func (n *FloatNode) GetPos() Position {
-	return n.Pos
-}
-
-func (n *FloatNode) SetPos(pos Position) {
-	n.Pos = pos
-}
-
 type StringNode struct {
+	BaseNode
 	Val string
-	Pos Position
 }
 
 func NewStringNode(val string, pos Position) *StringNode {
 	return &StringNode{
-		Val: val,
-		Pos: pos,
+		BaseNode: BaseNode{pos},
+		Val:      val,
 	}
 }
 
-func (n *StringNode) GetPos() Position {
-	return n.Pos
-}
-
-func (n *StringNode) SetPos(pos Position) {
-	n.Pos = pos
-}
-
 type SymbolNode struct {
+	BaseNode
 	Val string
-	Pos Position
 }
 
 func NewSymbolNode(val string, pos Position) *SymbolNode {
 	return &SymbolNode{
-		Val: val,
-		Pos: pos,
+		BaseNode: BaseNode{pos},
+		Val:      val,
 	}
-}
-
-func (n *SymbolNode) GetPos() Position {
-	return n.Pos
-}
-
-func (n *SymbolNode) SetPos(pos Position) {
-	n.Pos = pos
 }
 
 type CallNode struct {
-	Head any
-	Args []any
-	Pos  Position
+	BaseNode
+	Head Node
+	Args []Node
 }
 
-func NewCallNode(head any, args []any, pos Position) *CallNode {
+func NewCallNode(head Node, args []Node, pos Position) *CallNode {
 	return &CallNode{
-		Head: head,
-		Args: args,
-		Pos:  pos,
+		BaseNode: BaseNode{pos},
+		Head:     head,
+		Args:     args,
 	}
-}
-
-func (n *CallNode) GetPos() Position {
-	return n.Pos
-}
-
-func (n *CallNode) SetPos(pos Position) {
-	n.Pos = pos
 }
 
 type ListNode struct {
-	Elems []any
-	Pos   Position
+	BaseNode
+	Elems []Node
 }
 
-func NewListNode(elems []any, pos Position) *ListNode {
+func NewListNode(elems []Node, pos Position) *ListNode {
 	return &ListNode{
-		Elems: elems,
-		Pos:   pos,
+		BaseNode: BaseNode{pos},
+		Elems:    elems,
 	}
 }
 
-func (n *ListNode) GetPos() Position {
-	return n.Pos
-}
-
-func (n *ListNode) SetPos(pos Position) {
-	n.Pos = pos
-}
-
 type DictNode struct {
+	BaseNode
 	Pairs []*KeyValPair
-	Pos   Position
 }
 
 type KeyValPair struct {
-	Key any
-	Val any
+	Key Node
+	Val Node
 }
 
 func NewDictNode(pairs []*KeyValPair, pos Position) *DictNode {
 	return &DictNode{
-		Pairs: pairs,
-		Pos:   pos,
+		BaseNode: BaseNode{pos},
+		Pairs:    pairs,
 	}
 }
 
-func NewKeyValPair(key any, val any) *KeyValPair {
+func NewKeyValPair(key Node, val Node) *KeyValPair {
 	return &KeyValPair{
 		Key: key,
 		Val: val,
 	}
 }
 
-func (n *DictNode) GetPos() Position {
-	return n.Pos
-}
-
-func (n *DictNode) SetPos(pos Position) {
-	n.Pos = pos
-}
-
 type QuoteNode struct {
-	Arg any
-	Pos Position
+	BaseNode
+	Arg Node
 }
 
-func NewQuoteNode(arg any, pos Position) *QuoteNode {
+func NewQuoteNode(arg Node, pos Position) *QuoteNode {
 	return &QuoteNode{
-		Arg: arg,
-		Pos: pos,
+		BaseNode: BaseNode{pos},
+		Arg:      arg,
 	}
-}
-
-func (n *QuoteNode) GetPos() Position {
-	return n.Pos
-}
-
-func (n *QuoteNode) SetPos(pos Position) {
-	n.Pos = pos
 }
 
 type QuasiquoteNode struct {
-	Arg any
-	Pos Position
+	BaseNode
+	Arg Node
 }
 
-func NewQuasiquoteNode(arg any, pos Position) *QuasiquoteNode {
+func NewQuasiquoteNode(arg Node, pos Position) *QuasiquoteNode {
 	return &QuasiquoteNode{
-		Arg: arg,
-		Pos: pos,
+		BaseNode: BaseNode{pos},
+		Arg:      arg,
 	}
-}
-
-func (n *QuasiquoteNode) GetPos() Position {
-	return n.Pos
-}
-
-func (n *QuasiquoteNode) SetPos(pos Position) {
-	n.Pos = pos
 }
 
 type UnquoteNode struct {
-	Arg any
-	Pos Position
+	BaseNode
+	Arg Node
 }
 
-func NewUnquoteNode(arg any, pos Position) *UnquoteNode {
+func NewUnquoteNode(arg Node, pos Position) *UnquoteNode {
 	return &UnquoteNode{
-		Arg: arg,
-		Pos: pos,
+		BaseNode: BaseNode{pos},
+		Arg:      arg,
 	}
 }
 
-func (n *UnquoteNode) GetPos() Position {
-	return n.Pos
-}
-
-func (n *UnquoteNode) SetPos(pos Position) {
-	n.Pos = pos
-}
-
 type EOFNode struct {
-	Pos Position
+	BaseNode
 }
 
 func NewEOFNode(pos Position) *EOFNode {
 	return &EOFNode{
-		Pos: pos,
+		BaseNode: BaseNode{pos},
 	}
 }
 
-func (n *EOFNode) GetPos() Position {
-	return n.Pos
-}
+func WalkPos(expr Node, fn func(*Position)) {
+	fn(expr.Pos())
 
-func (n *EOFNode) SetPos(pos Position) {
-	n.Pos = pos
-}
+	switch val := expr.(type) {
+	case *CallNode:
+		WalkPos(val.Head, fn)
 
-func MapPos(expr any, fn func(Position) Position) {
-	if node, ok := expr.(Node); ok {
-		node.SetPos(fn(node.GetPos()))
-
-		switch val := node.(type) {
-		case *CallNode:
-			MapPos(val.Head, fn)
-
-			for _, arg := range val.Args {
-				MapPos(arg, fn)
-			}
-
-		case *ListNode:
-			for _, elem := range val.Elems {
-				MapPos(elem, fn)
-			}
-
-		case *DictNode:
-			for _, pair := range val.Pairs {
-				MapPos(pair.Key, fn)
-				MapPos(pair.Val, fn)
-			}
-
-		case *QuoteNode:
-			MapPos(val.Arg, fn)
-
-		case *QuasiquoteNode:
-			MapPos(val.Arg, fn)
-
-		case *UnquoteNode:
-			MapPos(val.Arg, fn)
+		for _, arg := range val.Args {
+			WalkPos(arg, fn)
 		}
+
+	case *ListNode:
+		for _, elem := range val.Elems {
+			WalkPos(elem, fn)
+		}
+
+	case *DictNode:
+		for _, pair := range val.Pairs {
+			WalkPos(pair.Key, fn)
+			WalkPos(pair.Val, fn)
+		}
+
+	case *QuoteNode:
+		WalkPos(val.Arg, fn)
+
+	case *QuasiquoteNode:
+		WalkPos(val.Arg, fn)
+
+	case *UnquoteNode:
+		WalkPos(val.Arg, fn)
 	}
 }

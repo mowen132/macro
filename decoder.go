@@ -22,7 +22,7 @@ func NewDecoder(r io.Reader) *Decoder {
 	}
 }
 
-func (d *Decoder) Decode() (any, error) {
+func (d *Decoder) Decode() (Node, error) {
 	switch d.token.Kind {
 	case TokenBOF:
 		if err := d.scan(); err != nil {
@@ -81,7 +81,7 @@ func (d *Decoder) Decode() (any, error) {
 			return nil, err
 		}
 
-		args := make([]any, 0)
+		args := make([]Node, 0)
 
 		for d.token.Kind != TokenRightParenthesis {
 			arg, err := d.Decode()
@@ -108,7 +108,7 @@ func (d *Decoder) Decode() (any, error) {
 			return nil, err
 		}
 
-		elems := make([]any, 0)
+		elems := make([]Node, 0)
 
 		for d.token.Kind != TokenRightSquare {
 			elem, err := d.Decode()

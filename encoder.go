@@ -17,7 +17,7 @@ func NewEncoder(w io.Writer) *Encoder {
 	}
 }
 
-func (e *Encoder) Encode(expr any) error {
+func (e *Encoder) Encode(expr Node) error {
 	switch node := expr.(type) {
 	case *IntNode:
 		if err := e.printer.PrintInt(node.Val); err != nil {
